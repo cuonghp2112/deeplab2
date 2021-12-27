@@ -28,11 +28,10 @@
 #   for Bottom-Up Panoptic Segmentation." In CVPR, 2020.
 
 # Use a unique experiment_name for each experiment.
-experiment_name: "${EXPERIMENT_NAME}"
+experiment_name: "test1"
 model_options {
   # Update the path to the initial checkpoint (e.g., ImageNet
   # pretrained checkpoint).
-  initial_checkpoint: "${INIT_CHECKPOINT}"
   backbone {
     name: "resnet50_beta"
     output_stride: 32
@@ -80,19 +79,19 @@ model_options {
       }
     }
     semantic_head {
-      output_channels: 134
+      output_channels: 6
       head_channels: 256
     }
   }
 }
 trainer_options {
-  save_checkpoints_steps: 1000
+  save_checkpoints_steps: 10000
   save_summaries_steps: 100
   steps_per_loop: 100
   loss_options {
     semantic_loss {
       name: "softmax_cross_entropy"
-      weight: 1.0
+      weight: 5.0
       top_k_percent: 0.2
     }
     center_loss {
@@ -107,16 +106,16 @@ trainer_options {
   solver_options {
     base_learning_rate: 0.0005
     training_number_of_steps: 200000
-    warmup_steps: 2000
+    warmup_steps: 3000
   }
 }
 train_dataset_options {
   dataset: "coco_panoptic"
   # Update the path to training set.
-  file_pattern: "${TRAIN_SET}"
+  file_pattern: "/content/drive/MyDrive/DA_20211/train_tfrecords/train-0000[0-6]*.tfrecord"
   # Adjust the batch_size accordingly to better fit your GPU/TPU memory.
   # Also see Q1 in g3doc/faq.md.
-  batch_size: 64
+  batch_size: 4
   crop_size: 641
   crop_size: 641
   min_resize_value: 641
@@ -133,7 +132,7 @@ train_dataset_options {
 eval_dataset_options {
   dataset: "coco_panoptic"
   # Update the path to validation set.
-  file_pattern: "${VAL_SET}"
+  file_pattern: "/content/drive/MyDrive/DA_20211/tfrecords/val*.tfrecord"
   batch_size: 1
   crop_size: 641
   crop_size: 641
@@ -145,7 +144,7 @@ eval_dataset_options {
 }
 evaluator_options {
   continuous_eval_timeout: -1
-  stuff_area_limit: 4096
+  stuff_area_limit: 100000
   center_score_threshold: 0.1
   nms_kernel: 41
   save_predictions: true
@@ -154,5 +153,5 @@ evaluator_options {
   # instance maps. For faster speed, compile TensorFlow with provided kernel
   # implementation under the folder `tensorflow_ops`, and set
   # merge_semantic_and_instance_with_tf_op to true.
-  merge_semantic_and_instance_with_tf_op: false
+  merge_semantic_and_instance_with_tf_op: true
 }

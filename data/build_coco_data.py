@@ -48,7 +48,7 @@ flags.DEFINE_boolean('treat_crowd_as_ignore', True,
                      'Whether to apply ignore labels to crowd pixels in '
                      'panoptic label.')
 
-_NUM_SHARDS = 1000
+_NUM_SHARDS = 10
 
 
 _SPLITS_TO_SIZES = dataset.COCO_PANOPTIC_INFORMATION.splits_to_sizes
