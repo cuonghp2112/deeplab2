@@ -206,7 +206,7 @@ def _generate_panoptic_label(panoptic_annotation_file: str, segments:
       raise ValueError('Stuff class should not have `iscrowd` label.')
 
   panoptic_label = semantic_label * _PANOPTIC_LABEL_DIVISOR + instance_label
-  return panoptic_label.astype(np.int32)
+  return panoptic_label.astype(np.int16)
 
 
 def _create_panoptic_label(coco_root: str, dataset_split: str, image_path: str,

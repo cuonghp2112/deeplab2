@@ -153,7 +153,7 @@ def create_features(image_data,
                        ((height, width), (label_height, label_width)))
   elif label_format == 'raw':
     # Raw label encodes int32 array.
-    expected_label_size = height * width * np.dtype(np.int32).itemsize
+    expected_label_size = height * width * np.dtype(np.int16).itemsize
     if len(label_data) != expected_label_size:
       raise ValueError('Expects raw label data length %d, gets %d' %
                        (expected_label_size, len(label_data)))
@@ -351,7 +351,7 @@ class SegmentationDecoder(object):
     """Decodes segmentation label under label_key from parsed tensors."""
     if self._is_panoptic_dataset:
       flattened_label = tf.io.decode_raw(
-          parsed_tensors[label_key], out_type=tf.int32)
+          parsed_tensors[label_key], out_type=tf.int16)
       label_shape = tf.stack([
           parsed_tensors[common.KEY_IMAGE_HEIGHT],
           parsed_tensors[common.KEY_IMAGE_WIDTH], 1
