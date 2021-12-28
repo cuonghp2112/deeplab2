@@ -357,6 +357,7 @@ class SegmentationDecoder(object):
           parsed_tensors[common.KEY_IMAGE_WIDTH], 1
       ])
       label = tf.reshape(flattened_label, label_shape)
+      label = tf.cast(label,tf.int32)
       return label
 
     label = tf.io.decode_image(parsed_tensors[label_key], channels=1)

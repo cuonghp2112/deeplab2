@@ -118,8 +118,8 @@ train_dataset_options {
   batch_size: 4
   crop_size: 769
   crop_size: 641
-  min_resize_value: 769
-  max_resize_value: 641
+  min_resize_value: 0
+  max_resize_value: 0
   augmentations {
     min_scale_factor: 0.5
     max_scale_factor: 1.5
@@ -136,8 +136,8 @@ eval_dataset_options {
   batch_size: 1
   crop_size: 769
   crop_size: 641
-  min_resize_value: 769
-  max_resize_value: 641
+  min_resize_value: 0
+  max_resize_value: 0
   # Add options to make the evaluation loss comparable to the training loss.
   increase_small_instance_weights: true
   small_instance_weight: 3.0
