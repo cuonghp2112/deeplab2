@@ -222,7 +222,7 @@ COCO_PANOPTIC_INFORMATION = DatasetDescriptor(
                      'val': 9138,
                      'test': 0},
     num_classes=6,
-    ignore_label=0,
+    ignore_label=99,
     panoptic_label_divisor=100,
     class_has_instances_list=tuple(range(1, 6)),
     is_video_dataset=False,
