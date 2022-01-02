@@ -1,7 +1,7 @@
 # proto-file: deeplab2/config.proto
 # proto-message: ExperimentOptions
 #
-# Panoptic-DeepLab with ResNet-50-beta model variant and output stride 16.
+# Panoptic-DeepLab with MobilenetV3-Large and output stride 16.
 #
 ############### PLEASE READ THIS BEFORE USING THIS CONFIG ###############
 # Before using this config, you need to update the following fields:
@@ -16,25 +16,22 @@
 #   under the folder `tensorflow_ops`.
 #########################################################################
 #
-# The `resnet50_beta` model variant replaces the first 7x7 convolutions in the
-# original `resnet50` with three 3x3 convolutions, which is useful for dense
-# prediction tasks.
+# For Mobilenet V3, see
+# - Andrew Howard, et al. "Searching for MobileNetV3" In ICCV, 2019.
 #
-# References:
-# For resnet-50-beta, see
-# https://github.com/tensorflow/models/blob/master/research/deeplab/core/resnet_v1_beta.py
 # For Panoptic-DeepLab, see
-# - Bowen Cheng, et al. "Panoptic-DeepLab: A Simple, Strong, and Fast Baseline
-#   for Bottom-Up Panoptic Segmentation." In CVPR, 2020.
+# - Bowen Cheng, et al. "Panoptic-DeepLab: A Simple, Strong, and Fast
+#   Baseline for Bottom-Up Panoptic Segmentation." In CVPR, 2020.
 
 # Use a unique experiment_name for each experiment.
-experiment_name: "test5"
+experiment_name: "${EXPERIMENT_NAME}"
 model_options {
   # Update the path to the initial checkpoint (e.g., ImageNet
   # pretrained checkpoint).
-  # initial_checkpoint: ""
+  # initial_checkpoint: "${INIT_CHECKPOINT}"
   backbone {
-    name: "resnet50_beta"
+    name: "mobilenet_v3_large"
+    use_squeeze_and_excite: true
     output_stride: 16
   }
   decoder {
@@ -105,30 +102,32 @@ trainer_options {
     }
   }
   solver_options {
-    base_learning_rate: 0.0007
-    training_number_of_steps: 200000
-    warmup_steps: 5000
+    base_learning_rate: 0.001
+    training_number_of_steps: 60000
+    warmup_steps: 500
+    batchnorm_epsilon: 0.00001
   }
 }
 train_dataset_options {
   dataset: "coco_panoptic"
-  # Update the path to training set.
+  # Update the path to train set.
   file_pattern: "/content/drive/MyDrive/DA_20211/final_tfrecords/train-0000[0-9]*.tfrecord"
   # Adjust the batch_size accordingly to better fit your GPU/TPU memory.
   # Also see Q1 in g3doc/faq.md.
   batch_size: 4
   crop_size: 769
-  crop_size: 641
-  min_resize_value: 769
-  max_resize_value: 641
+  crop_size: 649
+  # Skip resizing.
+  min_resize_value: 0
+  max_resize_value: 0
   augmentations {
     min_scale_factor: 0.5
-    max_scale_factor: 1.5
+    max_scale_factor: 2.0
     scale_factor_step_size: 0.1
     autoaugment_policy_name: "simple_classification_policy_magnitude_scale_0.2"
   }
-  increase_small_instance_weights: true
-  small_instance_weight: 3.0
+  increase_small_instance_weights: false
+  small_instance_weight: 1.0
 }
 eval_dataset_options {
   dataset: "coco_panoptic"
@@ -136,24 +135,24 @@ eval_dataset_options {
   file_pattern: "/content/drive/MyDrive/DA_20211/final_tfrecords/val-00000*.tfrecord"
   batch_size: 1
   crop_size: 769
-  crop_size: 641
-  min_resize_value: 769
-  max_resize_value: 641
+  crop_size: 649
+  # Skip resizing.
+  min_resize_value: 0
+  max_resize_value: 0
   # Add options to make the evaluation loss comparable to the training loss.
-  increase_small_instance_weights: true
-  small_instance_weight: 3.0
+  increase_small_instance_weights: false
+  small_instance_weight: 1.0
 }
 evaluator_options {
   continuous_eval_timeout: -1
   stuff_area_limit: 2048
   center_score_threshold: 0.1
-  nms_kernel: 41
+  nms_kernel: 7
   save_predictions: true
   save_raw_predictions: false
   # Use pure tf functions (i.e., no CUDA kernel) to merge semantic and
   # instance maps. For faster speed, compile TensorFlow with provided kernel
   # implementation under the folder `tensorflow_ops`, and set
   # merge_semantic_and_instance_with_tf_op to true.
-  merge_semantic_and_instance_with_tf_op: false
+  merge_semantic_and_instance_with_tf_op: true
 }
-
