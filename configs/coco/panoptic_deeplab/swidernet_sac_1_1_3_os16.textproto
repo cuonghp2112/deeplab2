@@ -1,7 +1,7 @@
 # proto-file: deeplab2/config.proto
 # proto-message: ExperimentOptions
 #
-# Panoptic-DeepLab with ResNet-50-beta model variant and output stride 16.
+# Panoptic-DeepLab with SWideRNet-SAC-(1, 1, 3) and output stride 16.
 #
 ############### PLEASE READ THIS BEFORE USING THIS CONFIG ###############
 # Before using this config, you need to update the following fields:
@@ -16,26 +16,33 @@
 #   under the folder `tensorflow_ops`.
 #########################################################################
 #
-# The `resnet50_beta` model variant replaces the first 7x7 convolutions in the
-# original `resnet50` with three 3x3 convolutions, which is useful for dense
-# prediction tasks.
+# SWideRNet-SAC-(1, 1, 3) employs the Switchable Atrous Convolution (SAC)
+# in the last stage of network backbone.
 #
 # References:
-# For resnet-50-beta, see
-# https://github.com/tensorflow/models/blob/master/research/deeplab/core/resnet_v1_beta.py
+# For SAC, see
+# - Siyuan Qiao, et al. "DetectoRS: Detecting Objects with Recursive
+#   Feature Pyramid and Switchable Atrous Convolution." In CVPR, 2021.
+# For SWideRNet, see
+# - Liang-Chieh Chen, et al. "Scaling Wide Residual Networks for
+#   Panoptic Segmentation." arXiv: 2011.11675.
 # For Panoptic-DeepLab, see
-# - Bowen Cheng, et al. "Panoptic-DeepLab: A Simple, Strong, and Fast Baseline
-#   for Bottom-Up Panoptic Segmentation." In CVPR, 2020.
+# - Bowen Cheng, et al. "Panoptic-DeepLab: A Simple, Strong, and Fast
+#   Baseline for Bottom-Up Panoptic Segmentation." In CVPR, 2020.
 
 # Use a unique experiment_name for each experiment.
-experiment_name: "test5"
+experiment_name: "${EXPERIMENT_NAME}"
 model_options {
-  # Update the path to the initial checkpoint (e.g., ImageNet
-  # pretrained checkpoint).
-  # initial_checkpoint: ""
+  # initial_checkpoint: "${INIT_CHECKPOINT}"
   backbone {
-    name: "resnet50_beta"
+    name: "swidernet"
     output_stride: 16
+    stem_width_multiplier: 1
+    backbone_width_multiplier: 1
+    backbone_layer_multiplier: 3
+    use_sac_beyond_stride: 32
+    drop_path_keep_prob: 0.8
+    drop_path_schedule: "linear"
   }
   decoder {
     feature_key: "res5"
@@ -105,9 +112,8 @@ trainer_options {
     }
   }
   solver_options {
-    base_learning_rate: 0.0007
-    training_number_of_steps: 200000
-    warmup_steps: 5000
+    base_learning_rate: 0.0001
+    training_number_of_steps: 60000
   }
 }
 train_dataset_options {
@@ -118,12 +124,13 @@ train_dataset_options {
   # Also see Q1 in g3doc/faq.md.
   batch_size: 4
   crop_size: 769
-  crop_size: 641
-  min_resize_value: 769
-  max_resize_value: 641
+  crop_size: 649
+  # Skip resizing.
+  min_resize_value: 0
+  max_resize_value: 0
   augmentations {
     min_scale_factor: 0.5
-    max_scale_factor: 1.5
+    max_scale_factor: 2.0
     scale_factor_step_size: 0.1
     autoaugment_policy_name: "simple_classification_policy_magnitude_scale_0.2"
   }
@@ -136,9 +143,10 @@ eval_dataset_options {
   file_pattern: "/content/drive/MyDrive/DA_20211/final_tfrecords/val-00000*.tfrecord"
   batch_size: 1
   crop_size: 769
-  crop_size: 641
-  min_resize_value: 769
-  max_resize_value: 641
+  crop_size: 649
+  # Skip resizing.
+  min_resize_value: 0
+  max_resize_value: 0
   # Add options to make the evaluation loss comparable to the training loss.
   increase_small_instance_weights: true
   small_instance_weight: 3.0
@@ -147,13 +155,13 @@ evaluator_options {
   continuous_eval_timeout: -1
   stuff_area_limit: 2048
   center_score_threshold: 0.1
-  nms_kernel: 41
+  nms_kernel: 13
   save_predictions: true
   save_raw_predictions: false
   # Use pure tf functions (i.e., no CUDA kernel) to merge semantic and
   # instance maps. For faster speed, compile TensorFlow with provided kernel
   # implementation under the folder `tensorflow_ops`, and set
   # merge_semantic_and_instance_with_tf_op to true.
-  merge_semantic_and_instance_with_tf_op: false
+  merge_semantic_and_instance_with_tf_op: true
 }
 
