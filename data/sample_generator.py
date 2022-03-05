@@ -247,6 +247,7 @@ class PanopticSampleGenerator:
         # Compute regression loss only for thing pixels that are not crowd.
         non_crowd_things = tf.logical_and(
             tf.logical_not(crowd_region), thing_mask)
+        sample["thing_mask"]= thing_mask
         sample[common.REGRESSION_LOSS_WEIGHT_KEY] = tf.squeeze(tf.cast(
             non_crowd_things, tf.float32), axis=2)
 
@@ -267,7 +268,7 @@ class PanopticSampleGenerator:
          frame_center_offsets,
          next_offset) = self._generate_gt_center_and_offset(
              panoptic_label, semantic_weights, prev_panoptic_label,
-             next_panoptic_label)
+             next_panoptic_label, thing_mask)
 
         sample[common.GT_INSTANCE_REGRESSION_KEY] = tf.cast(
             sample[common.GT_INSTANCE_REGRESSION_KEY], tf.float32)
@@ -523,7 +524,8 @@ class PanopticSampleGenerator:
                                      panoptic_label,
                                      semantic_weights,
                                      prev_panoptic_label=None,
-                                     next_panoptic_label=None):
+                                     next_panoptic_label=None,
+                                     thing_mask=None):
     """Generates the ground-truth center and offset from the panoptic labels.
 
     Additionally, the per-pixel weights for the semantic branch are increased
@@ -571,6 +573,20 @@ class PanopticSampleGenerator:
     if prev_panoptic_label is not None:
       (prev_center, prev_unique_ids, prev_centers_x, prev_centers_y
       ) = self._generate_prev_centers_with_noise(prev_panoptic_label)
+
+    kernel = tf.ones([64, 64, 1, 1], tf.float32)
+    things_count = tf.expand_dims(tf.cast(thing_mask, tf.float32), axis=0)
+    num_things_local = tf.nn.conv2d(things_count, kernel, strides=[1, 1, 1, 1], padding='SAME')
+    num_things_local = tf.reshape(num_things_local, [height, width, 1])
+    num_stuff_local = 64*64 - num_things_local
+    things_weigth = 1 + num_stuff_local/(64*64)
+    stuff_weights = 2 - num_stuff_local/(64*64)
+    semantic_weights = tf.where(thing_mask,
+                            things_weigth,
+                            semantic_weights)
+    semantic_weights = tf.where(~thing_mask,
+                        stuff_weights,
+                        semantic_weights)
 
     for panoptic_id in unique_ids:
       semantic_id = panoptic_id // self._dataset_info['panoptic_label_divisor']

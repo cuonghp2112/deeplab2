@@ -53,7 +53,7 @@ _COCO_META = [
     {
         'color': [0, 60, 100],
         'isthing': 0,
-        'id': 6,
+        'id': 0,
         'name': 'background'
     },
 ]
