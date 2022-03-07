@@ -2,24 +2,10 @@ import io
 
 import requests
 from PIL import Image
-from deeplab_infer import publaynet_dataset_information, vis_segmentation
-import tensorflow as tf
-
-
+from deeplab_infer import process
 import streamlit as st
 
-# interact with FastAPI endpoint
-model_dir = "/home/cuongph14/Downloads/panoptic_deeplab/resnet16_pd-20220304T195402Z-001/resnet16_pd"
-DATASET_INFO = publaynet_dataset_information()
-LOADED_MODEL = tf.saved_model.load(model_dir)
 
-
-def process(image):
-
-    output = LOADED_MODEL(tf.cast(image, tf.uint8))
-    fig = vis_segmentation(image, output['panoptic_pred'][0], DATASET_INFO)
-
-    return fig
 
 
 # construct UI layout

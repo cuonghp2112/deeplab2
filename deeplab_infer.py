@@ -10,6 +10,14 @@ from PIL import Image
 
 import tensorflow as tf
 
+global LOADED_MODEL
+LOADED_MODEL = None
+
+model_dir = "/home/cuongph14/Downloads/panoptic_deeplab/resnet16_pd-20220304T195402Z-001/resnet16_pd"
+if LOADED_MODEL is None:
+    LOADED_MODEL = tf.saved_model.load(model_dir)
+
+
 DatasetInfo = collections.namedtuple(
     'DatasetInfo',
     'num_classes, label_divisor, thing_list, colormap, class_names')
@@ -37,15 +45,6 @@ def _publaynet_label_colormap():
 
 def _publaynet_class_names():
   return ('background','text', 'title', 'list', 'table', 'figure', 'background')
-
-
-def publaynet_dataset_information():
-  return DatasetInfo(
-      num_classes=6,
-      label_divisor=100,
-      thing_list=tuple(range(1, 6)),
-      colormap=_publaynet_label_colormap(),
-      class_names=_publaynet_class_names())
 
 
 def perturb_color(color, noise, used_colors, max_trials=50, random_state=None):
@@ -181,3 +180,21 @@ def vis_segmentation(image,
   ax.tick_params(width=0.0, grid_linewidth=0.0)
   plt.grid('off')
   return fig
+
+def publaynet_dataset_information():
+  return DatasetInfo(
+      num_classes=6,
+      label_divisor=100,
+      thing_list=tuple(range(1, 6)),
+      colormap=_publaynet_label_colormap(),
+      class_names=_publaynet_class_names())
+
+DATASET_INFO = publaynet_dataset_information()
+
+
+def process(image):
+
+    output = LOADED_MODEL(tf.cast(image, tf.uint8))
+    fig = vis_segmentation(image, output['panoptic_pred'][0], DATASET_INFO)
+
+    return fig
